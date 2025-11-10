@@ -134,7 +134,7 @@ export const PROFESSIONALS: Professional[] = [
 
 
 export const INITIAL_BOOKED_SLOTS: BookedSlot[] = [
-    { date: "2025-07-20", time: "10:00", proId: "ahmet-yilmaz" },
-    { date: "2025-07-21", time: "14:30", proId: "mehmet-kaya" },
-    { date: "2025-07-22", time: "11:00", proId: "can-ozturk" }
+    { bookingId: 'booking-1721466000000', date: "2025-07-20", time: "10:00", proId: "ahmet-yilmaz", hotelId: 'cornelia-diamond', courseId: 'carya-golf', sessionName: "60 Minute Lesson", price: 75 },
+    { bookingId: 'booking-1721569800000', date: "2025-07-21", time: "14:30", proId: "mehmet-kaya", hotelId: 'regnum-carya', courseId: 'national-golf', sessionName: "Video Analysis", price: 90 },
+    { bookingId: 'booking-1721642400000', date: "2025-07-22", time: "11:00", proId: "can-ozturk", hotelId: 'maxx-royal', courseId: 'montgomerie-maxx', sessionName: "On-Course Lesson (18 Holes)", price: 300 }
 ];

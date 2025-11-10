@@ -31,7 +31,12 @@ export interface Professional {
 }
 
 export interface BookedSlot {
+  bookingId: string;
   date: string;
   time: string;
   proId: string;
+  hotelId: string;
+  courseId: string;
+  sessionName: string;
+  price: number;
 }
