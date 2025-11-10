@@ -117,7 +117,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose, professional
                     if (name === 'getProfessionalInfo') {
                         const { proId } = args as { proId?: string };
                         if (proId) {
-                            result = professionals.find(p => p.id === proId);
+                            result = professionals.find(p => p.id === proId) || null;
                         } else {
                             result = professionals.map(p => ({ id: p.id, name: p.name, title: p.title }));
                         }
@@ -154,7 +154,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose, professional
                         }
                         result = { success: true, message: 'Selection updated on the main screen.' };
                     }
-                    toolResults.push({ id: call.id, name, response: { result } });
+                    toolResults.push({ name, response: result });
                 }
                  const functionResponseParts: Part[] = toolResults.map(toolResult => ({
                     functionResponse: {
@@ -162,8 +162,9 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose, professional
                         response: toolResult.response,
                     },
                  }));
-
-                 response = await chat.sendMessage(functionResponseParts);
+                 
+                 // Fix: `sendMessage` expects an object with a `message` property.
+                 response = await chat.sendMessage({ message: functionResponseParts });
             }
 
             setMessages(prev => [...prev, { role: 'model', text: response.text }]);
