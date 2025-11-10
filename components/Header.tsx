@@ -1,5 +1,6 @@
 import React from 'react';
 import { Professional } from '../types';
+import Logo from './Logo';
 
 interface HeaderProps {
     professional: Professional;
@@ -15,10 +16,12 @@ const Header: React.FC<HeaderProps> = ({ professional }) => {
     });
 
     return (
-        <div className="relative bg-gradient-to-br from-[#0c4b83] to-[#1a6aaf] text-white p-6 md:p-8 text-center flex items-center justify-center">
-            <div>
-                <h1 className="text-2xl md:text-3xl font-semibold mb-1">{professional.name} - {professional.title}</h1>
-                <p className="text-base opacity-90">{formattedDate}</p>
+        <div className="bg-gradient-to-r from-[#083358] to-[#0c4b83] text-white p-4 md:p-6 flex items-center justify-between flex-wrap gap-4">
+            <Logo />
+            <div className="text-right flex-shrink-0">
+                <h1 className="text-xl md:text-2xl font-semibold text-white">{professional.name}</h1>
+                <p className="text-base text-gray-200">{professional.title}</p>
+                <p className="text-xs text-gray-300 mt-2">{formattedDate}</p>
             </div>
         </div>
     );
