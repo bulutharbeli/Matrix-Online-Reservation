@@ -34,15 +34,10 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose, professional
     useEffect(() => {
         if (isOpen && !chat) {
             try {
-                // This will throw a ReferenceError if 'process' is not defined in the browser.
                 const apiKey = process.env.API_KEY;
 
-                if (!apiKey) {
-                    console.error("AI Assistant Error: Gemini API key is missing. Please ensure the API_KEY environment variable is set in your deployment environment (e.g., Netlify build settings). The assistant cannot be initialized without it.");
-                    setMessages([{ role: 'model', text: 'Sorry, the AI assistant is currently unavailable due to a configuration issue: The API key is missing.' }]);
-                    return;
-                }
-
+                // The Gemini SDK will throw an error if the apiKey is falsy (null, undefined, etc.).
+                // This is the intended behavior we rely on to catch configuration issues.
                 const ai = new GoogleGenAI({ apiKey });
 
                 const getProfessionalInfo: FunctionDeclaration = {
@@ -98,13 +93,12 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose, professional
                 });
                 setChat(newChat);
                 setMessages([{ role: 'model', text: 'Hello! How can I help you plan your golf lesson today?' }]);
+            
             } catch (error) {
                 console.error("AI Assistant initialization failed:", error);
-                let errorMessage = 'Sorry, the AI assistant is currently unavailable.';
-                if (error instanceof ReferenceError && error.message.includes('process is not defined')) {
-                    console.error("This is likely a build configuration issue. In a browser environment without a proper build step, `process.env` is not available. Ensure your deployment process (e.g., with Vite or Webpack) correctly replaces `process.env.API_KEY` with the actual key.");
-                    errorMessage = 'Sorry, the AI assistant is unavailable due to an environment configuration error. Check the console for details.';
-                }
+                // This single catch block handles both ReferenceError (if `process` is not defined)
+                // and the SDK's internal error if the key is missing or invalid.
+                const errorMessage = `<strong>AI Assistant Configuration Error</strong><br><br>The assistant failed to start because the API key is missing or invalid. This commonly happens when deploying to a live server without a build process to handle environment variables.<br><br><strong>To fix this:</strong> Please ensure the <code>API_KEY</code> is configured correctly in your deployment environment's settings.`;
                 setMessages([{ role: 'model', text: errorMessage }]);
             }
         }
@@ -237,11 +231,11 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose, professional
                             onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                             placeholder="Ask about lessons or pros..."
                             className="w-full p-3 border-2 border-gray-200 rounded-lg text-sm transition focus:outline-none focus:border-[#0c4b83]"
-                            disabled={isLoading}
+                            disabled={isLoading || chat === null}
                         />
                         <button
                             onClick={handleSendMessage}
-                            disabled={isLoading || !input.trim()}
+                            disabled={isLoading || !input.trim() || chat === null}
                             className="p-3 bg-[#0c4b83] text-white rounded-lg hover:bg-[#1a6aaf] transition disabled:bg-gray-300"
                             aria-label="Send message"
                         >
