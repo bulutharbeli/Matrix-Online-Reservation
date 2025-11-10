@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GoogleGenAI, FunctionDeclaration, Type, Chat } from '@google/genai';
+import { GoogleGenAI, FunctionDeclaration, Type, Chat, Part } from '@google/genai';
 import { Professional, BookedSlot, SessionType } from '../types';
 
 interface Message {
@@ -156,7 +156,14 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose, professional
                     }
                     toolResults.push({ id: call.id, name, response: { result } });
                 }
-                 response = await chat.sendMessage({ toolResponses: { functionResponses: toolResults } });
+                 const functionResponseParts: Part[] = toolResults.map(toolResult => ({
+                    functionResponse: {
+                        name: toolResult.name,
+                        response: toolResult.response,
+                    },
+                 }));
+
+                 response = await chat.sendMessage(functionResponseParts);
             }
 
             setMessages(prev => [...prev, { role: 'model', text: response.text }]);
