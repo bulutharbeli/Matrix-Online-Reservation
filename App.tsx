@@ -16,6 +16,9 @@ import MyBookings from './components/MyBookings';
 import CancellationConfirmationDialog from './components/CancellationConfirmationDialog';
 import LoginDialog from './components/LoginDialog';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import AIAssistant from './components/AIAssistant';
+import AIAssistantButton from './components/AIAssistantButton';
+
 
 const AppContent: React.FC = () => {
     const { user } = useAuth();
@@ -44,6 +47,7 @@ const AppContent: React.FC = () => {
     const [isMyBookingsOpen, setIsMyBookingsOpen] = useState(false);
     const [bookingToCancelId, setBookingToCancelId] = useState<string | null>(null);
     const [isLoginOpen, setIsLoginOpen] = useState(false);
+    const [isAiAssistantOpen, setIsAiAssistantOpen] = useState(false);
 
     useEffect(() => {
         try {
@@ -307,6 +311,19 @@ const AppContent: React.FC = () => {
                     hotels={HOTELS}
                     courses={COURSES}
                 />
+
+                <AIAssistantButton onClick={() => setIsAiAssistantOpen(true)} />
+                <AIAssistant
+                    isOpen={isAiAssistantOpen}
+                    onClose={() => setIsAiAssistantOpen(false)}
+                    professionals={PROFESSIONALS}
+                    bookedSlots={bookedSlots}
+                    onProChange={handleProChange}
+                    onDateChange={handleDateSelect}
+                    onTimeChange={handleTimeSelect}
+                    onSessionChange={handleSessionChange}
+                />
+
             </div>
             <LoginDialog isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
         </>
