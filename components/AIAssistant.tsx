@@ -18,11 +18,19 @@ interface AIAssistantProps {
     onSessionChange: (session: SessionType) => void;
 }
 
+const ErrorIcon: React.FC = () => (
+    <svg className="h-6 w-6 text-red-400 mr-3 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+    </svg>
+);
+
+
 const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose, professionals, bookedSlots, onProChange, onDateChange, onTimeChange, onSessionChange }) => {
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [chat, setChat] = useState<Chat | null>(null);
+    const [initializationError, setInitializationError] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {
@@ -32,12 +40,16 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose, professional
     useEffect(scrollToBottom, [messages]);
 
     useEffect(() => {
-        if (isOpen && !chat) {
+        if (isOpen && !chat && !initializationError) {
             try {
-                const apiKey = process.env.API_KEY;
+                // In a build-less environment, the key must be injected into the window object.
+                const apiKey = (window as any).GEMINI_API_KEY;
 
-                // The Gemini SDK will throw an error if the apiKey is falsy (null, undefined, etc.).
-                // This is the intended behavior we rely on to catch configuration issues.
+                if (!apiKey || apiKey.startsWith("{{")) {
+                    // Give specific instructions for Netlify deployment
+                    throw new Error("API Key not found. Please configure Snippet Injection in Netlify.");
+                }
+
                 const ai = new GoogleGenAI({ apiKey });
 
                 const getProfessionalInfo: FunctionDeclaration = {
@@ -96,13 +108,26 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose, professional
             
             } catch (error) {
                 console.error("AI Assistant initialization failed:", error);
-                // This single catch block handles both ReferenceError (if `process` is not defined)
-                // and the SDK's internal error if the key is missing or invalid.
-                const errorMessage = `<strong>AI Assistant Configuration Error</strong><br><br>The assistant failed to start because the API key is missing or invalid. This commonly happens when deploying to a live server without a build process to handle environment variables.<br><br><strong>To fix this:</strong> Please ensure the <code>API_KEY</code> is configured correctly in your deployment environment's settings.`;
-                setMessages([{ role: 'model', text: errorMessage }]);
+                 const errorMessage = `
+                    <h3 class="font-bold text-red-800">AI Assistant Configuration Needed</h3>
+                    <div class="mt-2 text-sm text-red-700">
+                        <p>The assistant failed to start because the API key is not available to the application. To fix this, you need to add it to your Netlify site settings:</p>
+                        <ol class="list-decimal list-inside mt-3 space-y-2">
+                            <li>Go to <strong>Site settings > Build & deploy > Post processing</strong>.</li>
+                            <li>Click <strong>Add snippet</strong> under <strong>Snippet injection</strong>.</li>
+                            <li>Choose <strong>Insert before &lt;/head&gt;</strong>.</li>
+                            <li>Paste the following code into the snippet box:<br>
+                                <code class="text-xs bg-red-100 p-1 rounded-md block mt-1">&lt;script&gt;window.GEMINI_API_KEY = "{{env "API_KEY"}}";&lt;/script&gt;</code>
+                            </li>
+                            <li><strong>Save</strong> and then <strong>re-deploy</strong> your site from the "Deploys" tab.</li>
+                        </ol>
+                        <p class="mt-3">This will securely inject your API key from Netlify's environment variables into the app.</p>
+                    </div>`;
+                setInitializationError(errorMessage);
+                setMessages([]);
             }
         }
-    }, [isOpen, chat]);
+    }, [isOpen]);
 
     const handleSendMessage = async () => {
         if (!input.trim() || isLoading || !chat) return;
@@ -202,25 +227,36 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose, professional
                     </button>
                 </div>
                 <div className="p-4 flex-grow overflow-y-auto space-y-4">
-                    {messages.map((msg, index) => (
-                        <div key={index} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
-                            {msg.role === 'model' && <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 text-[#0c4b83]">AI</div>}
-                            <div className={`max-w-xs md:max-w-md p-3 rounded-2xl ${msg.role === 'user' ? 'bg-[#0c4b83] text-white rounded-br-none' : 'bg-gray-100 text-gray-800 rounded-bl-none'}`}>
-                                <p className="text-sm" dangerouslySetInnerHTML={{__html: msg.text.replace(/\n/g, '<br />')}}></p>
+                    {initializationError ? (
+                        <div className="rounded-md bg-red-50 p-4">
+                            <div className="flex">
+                                <ErrorIcon />
+                                <div className="ml-3" dangerouslySetInnerHTML={{ __html: initializationError }}></div>
                             </div>
                         </div>
-                    ))}
-                    {isLoading && (
-                        <div className="flex gap-3">
-                            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 text-[#0c4b83]">AI</div>
-                            <div className="max-w-xs md:max-w-md p-3 rounded-2xl bg-gray-100 text-gray-800 rounded-bl-none flex items-center gap-2">
-                                <span className="h-2 w-2 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                                <span className="h-2 w-2 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                                <span className="h-2 w-2 bg-blue-500 rounded-full animate-bounce"></span>
-                            </div>
-                        </div>
+                    ) : (
+                        <>
+                            {messages.map((msg, index) => (
+                                <div key={index} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+                                    {msg.role === 'model' && <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 text-[#0c4b83]">AI</div>}
+                                    <div className={`max-w-xs md:max-w-md p-3 rounded-2xl ${msg.role === 'user' ? 'bg-[#0c4b83] text-white rounded-br-none' : 'bg-gray-100 text-gray-800 rounded-bl-none'}`}>
+                                        <p className="text-sm" dangerouslySetInnerHTML={{__html: msg.text.replace(/\n/g, '<br />')}}></p>
+                                    </div>
+                                </div>
+                            ))}
+                            {isLoading && (
+                                <div className="flex gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 text-[#0c4b83]">AI</div>
+                                    <div className="max-w-xs md:max-w-md p-3 rounded-2xl bg-gray-100 text-gray-800 rounded-bl-none flex items-center gap-2">
+                                        <span className="h-2 w-2 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                                        <span className="h-2 w-2 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                                        <span className="h-2 w-2 bg-blue-500 rounded-full animate-bounce"></span>
+                                    </div>
+                                </div>
+                            )}
+                            <div ref={messagesEndRef} />
+                        </>
                     )}
-                    <div ref={messagesEndRef} />
                 </div>
                 <div className="p-4 border-t border-gray-200 flex-shrink-0">
                     <div className="flex gap-2">
@@ -230,12 +266,12 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose, professional
                             onChange={(e) => setInput(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                             placeholder="Ask about lessons or pros..."
-                            className="w-full p-3 border-2 border-gray-200 rounded-lg text-sm transition focus:outline-none focus:border-[#0c4b83]"
-                            disabled={isLoading || chat === null}
+                            className="w-full p-3 border-2 border-gray-200 rounded-lg text-sm transition focus:outline-none focus:border-[#0c4b83] disabled:bg-gray-100"
+                            disabled={isLoading || !!initializationError}
                         />
                         <button
                             onClick={handleSendMessage}
-                            disabled={isLoading || !input.trim() || chat === null}
+                            disabled={isLoading || !input.trim() || !!initializationError}
                             className="p-3 bg-[#0c4b83] text-white rounded-lg hover:bg-[#1a6aaf] transition disabled:bg-gray-300"
                             aria-label="Send message"
                         >
