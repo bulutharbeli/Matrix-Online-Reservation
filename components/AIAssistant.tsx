@@ -75,13 +75,13 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose, professional
                     },
                 };
 
-                // Fix: `systemInstruction` and `tools` must be inside a `config` object.
                 const newChat = ai.chats.create({
                     model: 'gemini-2.5-flash',
                     config: {
                         systemInstruction: `You are a helpful and friendly AI assistant for Matrix Golf Holidays, a golf lesson booking service in Belek, Antalya. Your goal is to help users find and book golf lessons with our Turkish PGA professionals.
 - Today's date is ${new Date().toLocaleDateString()}.
 - Use the available tools to answer questions about professionals, their schedules, and availability.
+- When checking for availability, if a user's requested time is not available, you MUST inform them and suggest up to 3 nearby alternative time slots for the same day.
 - When a user wants to book, use the updateBookingSelection tool to pre-fill the form for them and instruct them to review and confirm the booking themselves.
 - Be concise and conversational.`,
                         tools: [{ functionDeclarations: [getProfessionalInfo, getAvailableSlots, updateBookingSelection] }],
@@ -160,7 +160,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose, professional
                  const functionResponseParts: Part[] = toolResults.map(toolResult => ({
                     functionResponse: {
                         name: toolResult.name,
-                        response: toolResult.response,
+                        response: { "result": toolResult.response },
                     },
                  }));
                  
