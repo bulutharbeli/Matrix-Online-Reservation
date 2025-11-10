@@ -38,8 +38,8 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose, professional
                 const apiKey = process.env.API_KEY;
 
                 if (!apiKey) {
-                    console.error("Gemini API key is missing. Please ensure the API_KEY environment variable is set in your deployment environment.");
-                    setMessages([{ role: 'model', text: 'Sorry, the AI assistant is currently unavailable due to a configuration issue.' }]);
+                    console.error("AI Assistant Error: Gemini API key is missing. Please ensure the API_KEY environment variable is set in your deployment environment (e.g., Netlify build settings). The assistant cannot be initialized without it.");
+                    setMessages([{ role: 'model', text: 'Sorry, the AI assistant is currently unavailable due to a configuration issue: The API key is missing.' }]);
                     return;
                 }
 
@@ -102,8 +102,8 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose, professional
                 console.error("AI Assistant initialization failed:", error);
                 let errorMessage = 'Sorry, the AI assistant is currently unavailable.';
                 if (error instanceof ReferenceError && error.message.includes('process is not defined')) {
-                    console.error("This is likely a build configuration issue where environment variables are not being correctly embedded for browser access.");
-                    errorMessage = 'Sorry, the AI assistant is unavailable due to an environment configuration error.';
+                    console.error("This is likely a build configuration issue. In a browser environment without a proper build step, `process.env` is not available. Ensure your deployment process (e.g., with Vite or Webpack) correctly replaces `process.env.API_KEY` with the actual key.");
+                    errorMessage = 'Sorry, the AI assistant is unavailable due to an environment configuration error. Check the console for details.';
                 }
                 setMessages([{ role: 'model', text: errorMessage }]);
             }
