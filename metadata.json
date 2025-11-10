@@ -1,0 +1,5 @@
+{
+  "name": "Matrix Golf Holidays",
+  "description": "An elegant and responsive web application for booking golf lessons with Turkish PGA professionals at various golf clubs and hotels in Belek, Antalya. Users can select a location, a professional, view their availability, choose a lesson type in Euros, and book a time slot.",
+  "requestFramePermissions": []
+}
