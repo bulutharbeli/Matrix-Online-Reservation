@@ -30,6 +30,12 @@ export interface Professional {
   sessionTypes: SessionType[];
 }
 
+export interface User {
+  id: string;
+  email: string;
+  name?: string;
+}
+
 export interface BookedSlot {
   bookingId: string;
   date: string;
@@ -43,4 +49,5 @@ export interface BookedSlot {
   email: string;
   phone: string;
   notes: string;
+  userId: string;
 }

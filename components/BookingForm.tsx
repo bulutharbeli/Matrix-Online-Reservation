@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { User } from '../types';
 
 interface BookingFormProps {
     details: { name: string; email: string; phone: string; notes: string };
@@ -7,9 +8,10 @@ interface BookingFormProps {
     isBooking: boolean;
     bookingStatus: { message: string; type: 'success' | 'error' } | null;
     canBook: boolean;
+    user: User | null;
 }
 
-const InputField: React.FC<{ id: string; type?: string; placeholder: string; value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }> = ({ id, type = 'text', placeholder, value, onChange }) => (
+const InputField: React.FC<{ id: string; type?: string; placeholder: string; value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, disabled?: boolean }> = ({ id, type = 'text', placeholder, value, onChange, disabled = false }) => (
     <input
         id={id}
         name={id}
@@ -17,11 +19,12 @@ const InputField: React.FC<{ id: string; type?: string; placeholder: string; val
         placeholder={placeholder}
         value={value}
         onChange={onChange}
-        className="w-full p-3 border-2 border-gray-200 rounded-md text-sm transition focus:outline-none focus:border-[#0c4b83]"
+        disabled={disabled}
+        className="w-full p-3 border-2 border-gray-200 rounded-md text-sm transition focus:outline-none focus:border-[#0c4b83] disabled:bg-gray-100"
     />
 );
 
-const BookingForm: React.FC<BookingFormProps> = ({ details, onDetailsChange, onBook, isBooking, bookingStatus, canBook }) => {
+const BookingForm: React.FC<BookingFormProps> = ({ details, onDetailsChange, onBook, isBooking, bookingStatus, canBook, user }) => {
     
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         onDetailsChange({ [e.target.name]: e.target.value });
@@ -32,7 +35,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ details, onDetailsChange, onB
             <h3 className="text-lg font-semibold text-[#0c4b83] mb-4">Your Details</h3>
             <div className="space-y-3">
                 <InputField id="name" placeholder="Full Name" value={details.name} onChange={handleChange} />
-                <InputField id="email" type="email" placeholder="Email Address" value={details.email} onChange={handleChange} />
+                <InputField id="email" type="email" placeholder="Email Address" value={details.email} onChange={handleChange} disabled={!!user} />
                 <InputField id="phone" type="tel" placeholder="Phone Number" value={details.phone} onChange={handleChange} />
                 <textarea
                     id="notes"
@@ -49,7 +52,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ details, onDetailsChange, onB
                 disabled={!canBook || isBooking}
                 className="w-full mt-4 p-3.5 bg-gradient-to-br from-[#0c4b83] to-[#1a6aaf] text-white font-semibold rounded-lg transition-transform transform hover:-translate-y-0.5 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:transform-none"
             >
-                {isBooking ? 'Processing...' : 'Book Lesson'}
+                {isBooking ? 'Processing...' : (user ? 'Book Lesson' : 'Login to Book')}
             </button>
             {bookingStatus && (
                 <div className={`mt-4 p-3 rounded-md text-sm text-center ${

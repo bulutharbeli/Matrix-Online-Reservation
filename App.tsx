@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { HOTELS, PROFESSIONALS, COURSES } from './constants';
-import { Hotel, Professional, SessionType, BookedSlot, Course } from './types';
+import { Hotel, Professional, SessionType, BookedSlot, Course, User } from './types';
 import Header from './components/Header';
 import Selectors from './components/Selectors';
 import ProInfo from './components/ProInfo';
@@ -14,8 +14,11 @@ import Map from './components/Map';
 import ConfirmationDialog from './components/ConfirmationDialog';
 import MyBookings from './components/MyBookings';
 import CancellationConfirmationDialog from './components/CancellationConfirmationDialog';
+import LoginDialog from './components/LoginDialog';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
+    const { user } = useAuth();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedHotelId, setSelectedHotelId] = useState<string>(HOTELS[0].id);
     const [selectedCourseId, setSelectedCourseId] = useState<string>(COURSES[0].id);
@@ -40,6 +43,7 @@ const App: React.FC = () => {
     const [isConfirming, setIsConfirming] = useState(false);
     const [isMyBookingsOpen, setIsMyBookingsOpen] = useState(false);
     const [bookingToCancelId, setBookingToCancelId] = useState<string | null>(null);
+    const [isLoginOpen, setIsLoginOpen] = useState(false);
 
     useEffect(() => {
         try {
@@ -59,6 +63,17 @@ const App: React.FC = () => {
         setSelectedDate(null);
         setSelectedTime(null);
     }, [selectedProId]);
+
+    useEffect(() => {
+        if (user) {
+            setBookingDetails(prev => ({
+                ...prev,
+                email: user.email,
+                name: user.name || prev.name || ''
+            }));
+        }
+    }, [user]);
+
 
     const selectedHotel = useMemo<Hotel | undefined>(() => HOTELS.find(h => h.id === selectedHotelId), [selectedHotelId]);
     const selectedCourse = useMemo<Course | undefined>(() => COURSES.find(c => c.id === selectedCourseId), [selectedCourseId]);
@@ -94,16 +109,20 @@ const App: React.FC = () => {
     }, []);
 
     const handleBooking = useCallback(() => {
+        if (!user) {
+             setIsLoginOpen(true);
+             return;
+        }
         if (!selectedDate || !selectedTime || !bookingDetails.name || !bookingDetails.email) return;
         setIsConfirming(true);
-    }, [selectedDate, selectedTime, bookingDetails.name, bookingDetails.email]);
+    }, [user, selectedDate, selectedTime, bookingDetails.name, bookingDetails.email]);
 
     const handleCancelConfirmation = useCallback(() => {
         setIsConfirming(false);
     }, []);
 
     const handleConfirmBooking = useCallback(() => {
-        if (!selectedDate || !selectedTime || !selectedProId || !selectedSession || !bookingDetails.name || !bookingDetails.email) return;
+        if (!selectedDate || !selectedTime || !selectedProId || !selectedSession || !bookingDetails.name || !bookingDetails.email || !user) return;
 
         setIsBooking(true);
         setBookingStatus(null);
@@ -121,7 +140,8 @@ const App: React.FC = () => {
                 name: bookingDetails.name,
                 email: bookingDetails.email,
                 phone: bookingDetails.phone,
-                notes: bookingDetails.notes
+                notes: bookingDetails.notes,
+                userId: user.id,
             };
             setBookedSlots(prev => [...prev, newBooking]);
             
@@ -136,13 +156,13 @@ const App: React.FC = () => {
             setTimeout(() => {
                 setSelectedDate(null);
                 setSelectedTime(null);
-                setBookingDetails({ name: '', email: '', phone: '', notes: '' });
+                setBookingDetails(prev => ({ ...prev, phone: '', notes: '' }));
                 setBookingStatus(null);
             }, 5000);
 
         }, 1500);
 
-    }, [selectedDate, selectedTime, selectedProId, selectedSession, bookingDetails, selectedPro?.name, selectedHotelId, selectedCourseId]);
+    }, [selectedDate, selectedTime, selectedProId, selectedSession, bookingDetails, selectedPro?.name, selectedHotelId, selectedCourseId, user]);
     
     const handleInitiateCancelBooking = useCallback((bookingId: string) => {
         setBookingToCancelId(bookingId);
@@ -159,131 +179,146 @@ const App: React.FC = () => {
         }
     }, [bookingToCancelId]);
     
+    const userBookings = useMemo(() => user ? bookedSlots.filter(b => b.userId === user.id) : [], [bookedSlots, user]);
+    
     const bookingToCancel = useMemo(() => 
-        bookingToCancelId ? bookedSlots.find(b => b.bookingId === bookingToCancelId) || null : null,
-    [bookingToCancelId, bookedSlots]);
+        bookingToCancelId ? userBookings.find(b => b.bookingId === bookingToCancelId) || null : null,
+    [bookingToCancelId, userBookings]);
 
     const canBook = !!(selectedDate && selectedTime && bookingDetails.name && bookingDetails.email);
 
     return (
-        <div className="p-4 md:p-5 font-sans">
-            <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden">
-                {selectedPro && <Header professional={selectedPro} onShowBookings={() => setIsMyBookingsOpen(true)} />}
+        <>
+            <div className="p-4 md:p-5 font-sans">
+                <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden">
+                    {selectedPro && <Header professional={selectedPro} onShowBookingsRequest={() => setIsMyBookingsOpen(true)} onLoginClick={() => setIsLoginOpen(true)} />}
 
-                <div className="grid grid-cols-1 lg:grid-cols-[1fr_384px] gap-8 p-4 md:p-8">
-                    {/* Main Panel */}
-                    <div className="bg-gray-50/50 rounded-xl p-6 flex flex-col gap-6">
-                       <Selectors
-                            hotels={HOTELS}
-                            courses={COURSES}
-                            professionals={PROFESSIONALS}
-                            selectedHotelId={selectedHotelId}
-                            selectedCourseId={selectedCourseId}
-                            selectedProId={selectedProId}
-                            onHotelChange={handleHotelChange}
-                            onCourseChange={handleCourseChange}
-                            onProChange={handleProChange}
-                        />
-
-                        {selectedHotel && selectedCourse && selectedPro && (
-                            <ProInfo hotel={selectedHotel} course={selectedCourse} professional={selectedPro} />
-                        )}
-
-                        {selectedHotel && (
-                            <Map
-                                latitude={selectedHotel.latitude}
-                                longitude={selectedHotel.longitude}
-                                hotelName={selectedHotel.name}
+                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_384px] gap-8 p-4 md:p-8">
+                        {/* Main Panel */}
+                        <div className="bg-gray-50/50 rounded-xl p-6 flex flex-col gap-6">
+                           <Selectors
+                                hotels={HOTELS}
+                                courses={COURSES}
+                                professionals={PROFESSIONALS}
+                                selectedHotelId={selectedHotelId}
+                                selectedCourseId={selectedCourseId}
+                                selectedProId={selectedProId}
+                                onHotelChange={handleHotelChange}
+                                onCourseChange={handleCourseChange}
+                                onProChange={handleProChange}
                             />
-                        )}
-                        {selectedPro && (
-                            <>
-                                <Calendar 
-                                    currentDate={currentDate}
-                                    setCurrentDate={setCurrentDate}
-                                    selectedDate={selectedDate}
-                                    onDateSelect={handleDateSelect}
-                                    schedule={selectedPro.schedule}
-                                />
-                                <WeeklySchedule schedule={selectedPro.schedule} />
-                                <TimeSlots
-                                    selectedDate={selectedDate}
-                                    schedule={selectedPro.schedule}
-                                    bookedSlots={bookedSlots}
-                                    proId={selectedPro.id}
-                                    selectedTime={selectedTime}
-                                    onTimeSelect={handleTimeSelect}
-                                />
-                            </>
-                        )}
-                    </div>
 
-                    {/* Sidebar */}
-                    <div className="flex flex-col gap-5">
-                       {selectedPro && selectedSession && (
-                            <>
-                                <SessionTypeSelector
-                                    sessions={selectedPro.sessionTypes}
-                                    selectedSession={selectedSession}
-                                    onSessionChange={handleSessionChange}
+                            {selectedHotel && selectedCourse && selectedPro && (
+                                <ProInfo hotel={selectedHotel} course={selectedCourse} professional={selectedPro} />
+                            )}
+
+                            {selectedHotel && (
+                                <Map
+                                    latitude={selectedHotel.latitude}
+                                    longitude={selectedHotel.longitude}
+                                    hotelName={selectedHotel.name}
                                 />
-                                <BookingSummary
-                                    session={selectedSession}
-                                    date={selectedDate}
-                                    time={selectedTime}
-                                    hotel={selectedHotel}
-                                    course={selectedCourse}
-                                    professional={selectedPro}
-                                />
-                                <BookingForm
-                                    details={bookingDetails}
-                                    onDetailsChange={handleBookingDetailsChange}
-                                    onBook={handleBooking}
-                                    isBooking={isBooking}
-                                    bookingStatus={bookingStatus}
-                                    canBook={canBook}
-                                />
-                            </>
-                       )}
+                            )}
+                            {selectedPro && (
+                                <>
+                                    <Calendar 
+                                        currentDate={currentDate}
+                                        setCurrentDate={setCurrentDate}
+                                        selectedDate={selectedDate}
+                                        onDateSelect={handleDateSelect}
+                                        schedule={selectedPro.schedule}
+                                    />
+                                    <WeeklySchedule schedule={selectedPro.schedule} />
+                                    <TimeSlots
+                                        selectedDate={selectedDate}
+                                        schedule={selectedPro.schedule}
+                                        bookedSlots={bookedSlots}
+                                        proId={selectedPro.id}
+                                        selectedTime={selectedTime}
+                                        onTimeSelect={handleTimeSelect}
+                                    />
+                                </>
+                            )}
+                        </div>
+
+                        {/* Sidebar */}
+                        <div className="flex flex-col gap-5">
+                           {selectedPro && selectedSession && (
+                                <>
+                                    <SessionTypeSelector
+                                        sessions={selectedPro.sessionTypes}
+                                        selectedSession={selectedSession}
+                                        onSessionChange={handleSessionChange}
+                                    />
+                                    <BookingSummary
+                                        session={selectedSession}
+                                        date={selectedDate}
+                                        time={selectedTime}
+                                        hotel={selectedHotel}
+                                        course={selectedCourse}
+                                        professional={selectedPro}
+                                    />
+                                    <BookingForm
+                                        details={bookingDetails}
+                                        onDetailsChange={handleBookingDetailsChange}
+                                        onBook={handleBooking}
+                                        isBooking={isBooking}
+                                        bookingStatus={bookingStatus}
+                                        canBook={canBook}
+                                        user={user}
+                                    />
+                                </>
+                           )}
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {selectedPro && selectedSession && (
-                <ConfirmationDialog 
-                    isOpen={isConfirming}
-                    onConfirm={handleConfirmBooking}
-                    onCancel={handleCancelConfirmation}
-                    isBooking={isBooking}
-                    session={selectedSession}
-                    date={selectedDate}
-                    time={selectedTime}
-                    hotel={selectedHotel}
-                    course={selectedCourse}
-                    professional={selectedPro}
+                {selectedPro && selectedSession && (
+                    <ConfirmationDialog 
+                        isOpen={isConfirming}
+                        onConfirm={handleConfirmBooking}
+                        onCancel={handleCancelConfirmation}
+                        isBooking={isBooking}
+                        session={selectedSession}
+                        date={selectedDate}
+                        time={selectedTime}
+                        hotel={selectedHotel}
+                        course={selectedCourse}
+                        professional={selectedPro}
+                    />
+                )}
+                
+                <MyBookings
+                    isOpen={isMyBookingsOpen}
+                    onClose={() => setIsMyBookingsOpen(false)}
+                    bookings={userBookings}
+                    professionals={PROFESSIONALS}
+                    hotels={HOTELS}
+                    courses={COURSES}
+                    onCancelBooking={handleInitiateCancelBooking}
                 />
-            )}
-            
-            <MyBookings
-                isOpen={isMyBookingsOpen}
-                onClose={() => setIsMyBookingsOpen(false)}
-                bookings={bookedSlots}
-                professionals={PROFESSIONALS}
-                hotels={HOTELS}
-                courses={COURSES}
-                onCancelBooking={handleInitiateCancelBooking}
-            />
-            
-            <CancellationConfirmationDialog
-                isOpen={!!bookingToCancelId}
-                onConfirm={handleConfirmCancelBooking}
-                onCancel={handleCloseCancelDialog}
-                booking={bookingToCancel}
-                professionals={PROFESSIONALS}
-                hotels={HOTELS}
-                courses={COURSES}
-            />
-        </div>
+                
+                <CancellationConfirmationDialog
+                    isOpen={!!bookingToCancelId}
+                    onConfirm={handleConfirmCancelBooking}
+                    onCancel={handleCloseCancelDialog}
+                    booking={bookingToCancel}
+                    professionals={PROFESSIONALS}
+                    hotels={HOTELS}
+                    courses={COURSES}
+                />
+            </div>
+            <LoginDialog isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
+        </>
+    );
+};
+
+
+const App: React.FC = () => {
+    return (
+        <AuthProvider>
+            <AppContent />
+        </AuthProvider>
     );
 };
 
