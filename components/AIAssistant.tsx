@@ -33,8 +33,13 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose, professional
 
     useEffect(() => {
         if (isOpen && !chat) {
+            if (!process.env.API_KEY) {
+                console.error("Gemini API key is missing. Please ensure the API_KEY environment variable is set in your deployment environment.");
+                setMessages([{ role: 'model', text: 'Sorry, the AI assistant is currently unavailable.' }]);
+                return;
+            }
             try {
-                const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+                const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
                 const getProfessionalInfo: FunctionDeclaration = {
                     name: 'getProfessionalInfo',
