@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { HOTELS, PROFESSIONALS, COURSES, INITIAL_BOOKED_SLOTS } from './constants';
+import { HOTELS, PROFESSIONALS, COURSES } from './constants';
 import { Hotel, Professional, SessionType, BookedSlot, Course } from './types';
 import Header from './components/Header';
 import Selectors from './components/Selectors';
@@ -27,15 +27,10 @@ const App: React.FC = () => {
     const [bookedSlots, setBookedSlots] = useState<BookedSlot[]>(() => {
         try {
             const storedBookings = window.localStorage.getItem('userBookings');
-            if (storedBookings) {
-                return JSON.parse(storedBookings);
-            }
-            // First time load, set initial and save
-            window.localStorage.setItem('userBookings', JSON.stringify(INITIAL_BOOKED_SLOTS));
-            return INITIAL_BOOKED_SLOTS;
+            return storedBookings ? JSON.parse(storedBookings) : [];
         } catch (error) {
             console.error("Error reading from localStorage", error);
-            return INITIAL_BOOKED_SLOTS;
+            return [];
         }
     });
 
