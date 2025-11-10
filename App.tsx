@@ -117,7 +117,11 @@ const App: React.FC = () => {
                 hotelId: selectedHotelId,
                 courseId: selectedCourseId,
                 sessionName: selectedSession.name,
-                price: selectedSession.price
+                price: selectedSession.price,
+                name: bookingDetails.name,
+                email: bookingDetails.email,
+                phone: bookingDetails.phone,
+                notes: bookingDetails.notes
             };
             setBookedSlots(prev => [...prev, newBooking]);
             

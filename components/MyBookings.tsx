@@ -81,6 +81,12 @@ const MyBookings: React.FC<MyBookingsProps> = ({
                                             <p><span className="font-semibold">Lesson:</span> {booking.sessionName}</p>
                                             <p><span className="font-semibold">Location:</span> {course?.name || 'N/A'} at {hotel?.name || 'N/A'}</p>
                                         </div>
+                                        <div className="border-t border-gray-100 my-3"></div>
+                                        <div className="text-sm space-y-2 text-gray-700">
+                                            <p className="font-semibold text-gray-800">Client Details:</p>
+                                            <p><span className="font-semibold">Name:</span> {booking.name}</p>
+                                            <p><span className="font-semibold">Email:</span> {booking.email}</p>
+                                        </div>
                                         {!isPast && (
                                             <div className="mt-4 text-right">
                                                 {canCancel ? (

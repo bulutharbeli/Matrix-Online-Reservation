@@ -39,4 +39,8 @@ export interface BookedSlot {
   courseId: string;
   sessionName: string;
   price: number;
+  name: string;
+  email: string;
+  phone: string;
+  notes: string;
 }

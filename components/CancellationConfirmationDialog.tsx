@@ -56,6 +56,7 @@ const CancellationConfirmationDialog: React.FC<CancellationConfirmationDialogPro
                     <p className="text-center text-gray-600 text-sm mb-6">Are you sure you want to cancel this lesson? This action cannot be undone.</p>
                     
                     <div className="bg-gray-50/70 rounded-lg p-4 space-y-1 mb-6 border border-gray-200">
+                        <DetailItem label="Client" value={booking.name} />
                         <DetailItem label="Professional" value={pro?.name || '-'} />
                         <DetailItem label="Session" value={booking.sessionName} />
                         <DetailItem label="Date" value={formattedDate} />
