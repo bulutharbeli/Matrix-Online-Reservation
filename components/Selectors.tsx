@@ -28,7 +28,7 @@ const Selector: React.FC<{ label: string; value: string; onChange: (e: React.Cha
 
 const Selectors: React.FC<SelectorsProps> = ({ hotels, courses, professionals, selectedHotelId, selectedCourseId, selectedProId, onHotelChange, onCourseChange, onProChange }) => {
     return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 selectors-container">
             <Selector label="Select Hotel" value={selectedHotelId} onChange={(e) => onHotelChange(e.target.value)}>
                 {hotels.map(hotel => (
                     <option key={hotel.id} value={hotel.id}>{hotel.name}</option>

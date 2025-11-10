@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { HOTELS, PROFESSIONALS, COURSES, INITIAL_BOOKED_SLOTS } from './constants';
 import { Hotel, Professional, SessionType, BookedSlot, Course } from './types';
 import Header from './components/Header';
@@ -26,9 +26,6 @@ const App: React.FC = () => {
     const [bookingStatus, setBookingStatus] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
     const [isBooking, setIsBooking] = useState(false);
     const [isConfirming, setIsConfirming] = useState(false); // State for dialog visibility
-    const [logoSrc, setLogoSrc] = useState<string>('/logo.png');
-
-    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         const pro = PROFESSIONALS.find(p => p.id === selectedProId);
@@ -115,46 +112,12 @@ const App: React.FC = () => {
 
     }, [selectedDate, selectedTime, selectedProId, bookingDetails, selectedPro?.name, selectedHotel?.name, selectedCourse?.name]);
 
-    const handleLogoUploadClick = () => {
-        fileInputRef.current?.click();
-    };
-
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                if(e.target?.result) {
-                    setLogoSrc(e.target.result as string);
-                }
-            };
-            reader.readAsDataURL(file);
-        }
-    };
-
     const canBook = !!(selectedDate && selectedTime && bookingDetails.name && bookingDetails.email);
 
     return (
         <div className="p-4 md:p-5 font-sans">
             <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden">
-                {selectedPro && <Header professional={selectedPro} logoSrc={logoSrc} />}
-                
-                <div className="px-4 md:px-8 pt-4 border-b border-gray-100">
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handleFileChange}
-                        accept="image/png, image/jpeg, image/gif, image/svg+xml"
-                        style={{ display: 'none' }}
-                    />
-                    <button
-                        onClick={handleLogoUploadClick}
-                        className="bg-gray-100 text-gray-700 font-semibold py-2 px-4 rounded-lg text-sm hover:bg-gray-200 transition"
-                    >
-                        Upload Your Logo
-                    </button>
-                </div>
-
+                {selectedPro && <Header professional={selectedPro} />}
 
                 <div className="grid grid-cols-1 lg:grid-cols-[1fr_384px] gap-8 p-4 md:p-8">
                     {/* Main Panel */}
@@ -170,13 +133,11 @@ const App: React.FC = () => {
                             onCourseChange={handleCourseChange}
                             onProChange={handleProChange}
                         />
+
                         {selectedHotel && selectedCourse && selectedPro && (
-                            <ProInfo 
-                                hotel={selectedHotel} 
-                                course={selectedCourse} 
-                                professional={selectedPro} 
-                            />
+                            <ProInfo hotel={selectedHotel} course={selectedCourse} professional={selectedPro} />
                         )}
+
                         {selectedHotel && (
                             <Map
                                 latitude={selectedHotel.latitude}

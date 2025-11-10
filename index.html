@@ -15,6 +15,14 @@
   }
 }
 </script>
+<style>
+  /* Ensure selectors stack on screens smaller than 768px */
+  @media (max-width: 767px) {
+    .selectors-container {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
 </head>
   <body class="bg-gradient-to-br from-[#083358] to-[#0c4b83]">
     <div id="root"></div>

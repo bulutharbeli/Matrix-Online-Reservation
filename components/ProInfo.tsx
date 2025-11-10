@@ -39,7 +39,7 @@ const ProInfo: React.FC<ProInfoProps> = ({ hotel, course, professional }) => {
     );
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <InfoCard title={hotel.name} subtitle={hotel.address} icon={hotelIcon} />
             <InfoCard title={course.name} subtitle={course.address} icon={courseIcon} />
             <InfoCard title={professional.name} subtitle={professional.title} icon={proIcon} />
