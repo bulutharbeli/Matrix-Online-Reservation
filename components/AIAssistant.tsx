@@ -75,6 +75,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose, professional
                     },
                 };
 
+                // Fix: `systemInstruction` and `tools` must be inside a `config` object.
                 const newChat = ai.chats.create({
                     model: 'gemini-2.5-flash',
                     config: {
@@ -84,7 +85,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose, professional
 - When a user wants to book, use the updateBookingSelection tool to pre-fill the form for them and instruct them to review and confirm the booking themselves.
 - Be concise and conversational.`,
                         tools: [{ functionDeclarations: [getProfessionalInfo, getAvailableSlots, updateBookingSelection] }],
-                    },
+                    }
                 });
                 setChat(newChat);
                 setMessages([{ role: 'model', text: 'Hello! How can I help you plan your golf lesson today?' }]);
@@ -93,7 +94,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose, professional
                 setMessages([{ role: 'model', text: 'Sorry, the AI assistant is currently unavailable.' }]);
             }
         }
-    }, [isOpen]);
+    }, [isOpen, professionals, bookedSlots, onProChange, onDateChange, onTimeChange, onSessionChange, chat]);
 
     const handleSendMessage = async () => {
         if (!input.trim() || isLoading || !chat) return;
@@ -163,7 +164,6 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose, professional
                     },
                  }));
                  
-                 // Fix: `sendMessage` expects an object with a `message` property.
                  response = await chat.sendMessage({ message: functionResponseParts });
             }
 
