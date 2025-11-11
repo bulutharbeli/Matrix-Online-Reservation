@@ -108,6 +108,10 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose, professional
                         properties: {
                             proId: { type: Type.STRING, description: 'The ID of the professional.' },
                             date: { type: Type.STRING, description: 'The date in YYYY-MM-DD format.' },
+                            duration: {
+                                type: Type.NUMBER,
+                                description: 'The desired lesson duration in minutes (e.g., 30, 60, 90). Defaults to 30.'
+                            },
                         },
                         required: ['proId', 'date'],
                     },
@@ -130,11 +134,14 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose, professional
                     model: 'gemini-2.5-flash',
                     config: {
                         systemInstruction: `You are a helpful and friendly AI assistant for Matrix Golf Holidays, a golf lesson booking service in Belek, Antalya. Your goal is to help users find and book golf lessons with our Turkish PGA professionals.
+- Your primary goal is to provide specific, actionable recommendations for booking.
 - Today's date is ${new Date().toLocaleDateString()}.
-- Use the available tools to answer questions about professionals, their schedules, and availability.
-- When checking for availability, if a user's requested time is not available, you MUST inform them and suggest up to 3 nearby alternative time slots for the same day.
-- When a user wants to book, use the updateBookingSelection tool to pre-fill the form for them and instruct them to review and confirm the booking themselves.
-- When presenting lists, such as a list of professionals or available time slots, you MUST use Markdown bullet points (e.g., '* Item 1').
+- Use the available tools to answer questions about professionals and their availability. When a user asks for availability, don't just list all slots. Instead, analyze their request (e.g., 'afternoon', 'weekend', 'a one-hour lesson') and use the getAvailableSlots tool to find matching slots.
+- When using getAvailableSlots, you MUST specify the 'duration' parameter if the user mentions how long of a lesson they want.
+- Proactively suggest 2-3 specific time slots that fit the user's query. For example: 'I found a few openings for you with Ahmet on Tuesday: how about 2:00 PM for a 60-minute lesson?'
+- If no slots match perfectly, find the closest available alternatives and present them clearly.
+- When a user wants to book, use the updateBookingSelection tool to pre-fill the form for them and instruct them to review and confirm the booking themselves on the main screen.
+- When presenting lists of choices, you MUST use Markdown bullet points (e.g., '* Item 1').
 - Be concise and conversational.`,
                         tools: [{ functionDeclarations: [getProfessionalInfo, getAvailableSlots, updateBookingSelection] }],
                     }
@@ -190,7 +197,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose, professional
                             result = professionals.map(p => ({ id: p.id, name: p.name, title: p.title }));
                         }
                     } else if (name === 'getAvailableSlots') {
-                        const { proId, date } = args as { proId: string; date: string };
+                        const { proId, date, duration = 30 } = args as { proId: string; date: string; duration?: number };
                         const pro = professionals.find(p => p.id === proId);
                         if (!pro) {
                             result = { error: 'Professional not found.' };
@@ -200,14 +207,48 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose, professional
                             if (!daySchedule) {
                                 result = { availableSlots: [] };
                             } else {
-                                const slots: string[] = [];
+                                // Generate all possible 30-min slots for the day in order
+                                const allPossibleSlots: string[] = [];
                                 for (let hour = daySchedule.start; hour < daySchedule.end; hour++) {
                                     for (let minute = 0; minute < 60; minute += 30) {
-                                        slots.push(`${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`);
+                                        allPossibleSlots.push(`${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`);
                                     }
                                 }
-                                const proBookedSlots = bookedSlots.filter(s => s.proId === proId && s.date === date).map(s => s.time);
-                                result = { availableSlots: slots.filter(s => !proBookedSlots.includes(s)) };
+
+                                // Get a set of booked slots for fast lookup
+                                const proBookedSlots = new Set(
+                                    bookedSlots
+                                        .filter(s => s.proId === proId && s.date === date)
+                                        .map(s => s.time)
+                                );
+                                
+                                // Get a set of available 30-min slots
+                                const available30MinSlots = new Set(allPossibleSlots.filter(s => !proBookedSlots.has(s)));
+
+                                const requiredConsecutiveSlots = Math.ceil(duration / 30);
+                                const validStartSlots: string[] = [];
+
+                                if (requiredConsecutiveSlots <= 1) {
+                                    // If duration is 30 mins or less, just return all available slots
+                                    validStartSlots.push(...Array.from(available30MinSlots));
+                                } else {
+                                    // Iterate through all possible slots to find valid starting points for the desired duration
+                                    for (let i = 0; i <= allPossibleSlots.length - requiredConsecutiveSlots; i++) {
+                                        const potentialStartSlot = allPossibleSlots[i];
+                                        let isBlockAvailable = true;
+                                        // Check if the block of slots is fully available
+                                        for (let j = 0; j < requiredConsecutiveSlots; j++) {
+                                            if (!available30MinSlots.has(allPossibleSlots[i + j])) {
+                                                isBlockAvailable = false;
+                                                break;
+                                            }
+                                        }
+                                        if (isBlockAvailable) {
+                                            validStartSlots.push(potentialStartSlot);
+                                        }
+                                    }
+                                }
+                                result = { availableSlots: validStartSlots };
                             }
                         }
                     } else if (name === 'updateBookingSelection') {
