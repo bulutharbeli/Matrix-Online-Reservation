@@ -64,8 +64,17 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ isOpen, onClose }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="login-dialog-title">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 sm:p-8" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 transition-opacity duration-300" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="login-dialog-title">
+             <style>{`
+                @keyframes fade-in-scale {
+                    from { opacity: 0; transform: scale(0.95); }
+                    to { opacity: 1; transform: scale(1); }
+                }
+                .animate-fade-in-scale {
+                    animation: fade-in-scale 0.2s ease-out forwards;
+                }
+            `}</style>
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 sm:p-8 transform transition-all opacity-0 scale-95 animate-fade-in-scale" onClick={e => e.stopPropagation()}>
                 <h2 id="login-dialog-title" className="text-2xl font-bold text-center text-[#0c4b83] mb-2">{mode === 'login' ? 'Welcome Back' : 'Create Account'}</h2>
                 <p className="text-center text-gray-600 text-sm mb-6">{mode === 'login' ? 'Log in to manage your bookings.' : 'Get started with your free account.'}</p>
                 

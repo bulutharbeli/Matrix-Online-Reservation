@@ -9,6 +9,7 @@ interface MyBookingsProps {
     hotels: Hotel[];
     courses: Course[];
     onCancelBooking: (bookingId: string) => void;
+    bookingBeingCancelled: string | null;
 }
 
 const MyBookings: React.FC<MyBookingsProps> = ({
@@ -19,6 +20,7 @@ const MyBookings: React.FC<MyBookingsProps> = ({
     hotels,
     courses,
     onCancelBooking,
+    bookingBeingCancelled,
 }) => {
     if (!isOpen) return null;
 
@@ -26,14 +28,45 @@ const MyBookings: React.FC<MyBookingsProps> = ({
 
     return (
         <div 
-            className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 transition-opacity" 
+            className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 transition-opacity duration-300" 
             role="dialog" 
             aria-modal="true" 
             aria-labelledby="bookings-title"
             onClick={onClose}
         >
+            <style>{`
+                @keyframes fade-in-scale {
+                    from { opacity: 0; transform: scale(0.95); }
+                    to { opacity: 1; transform: scale(1); }
+                }
+                .animate-fade-in-scale {
+                    animation: fade-in-scale 0.2s ease-out forwards;
+                }
+                @keyframes fade-out-shrink {
+                    from { 
+                        opacity: 1; 
+                        transform: scaleY(1); 
+                        max-height: 300px; 
+                        margin-bottom: 1rem;
+                    }
+                    to { 
+                        opacity: 0; 
+                        transform: scaleY(0.9); 
+                        max-height: 0; 
+                        margin-bottom: 0;
+                        padding-top: 0;
+                        padding-bottom: 0;
+                        border-width: 0;
+                    }
+                }
+                .animate-fade-out-shrink {
+                    animation: fade-out-shrink 0.5s ease-out forwards;
+                    transform-origin: top;
+                    overflow: hidden;
+                }
+            `}</style>
             <div 
-                className="bg-gray-50 rounded-xl shadow-2xl w-full max-w-2xl transform transition-all flex flex-col"
+                className="bg-gray-50 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col transform opacity-0 scale-95 animate-fade-in-scale"
                 onClick={e => e.stopPropagation()}
                 style={{maxHeight: '90vh'}}
             >
@@ -67,7 +100,10 @@ const MyBookings: React.FC<MyBookingsProps> = ({
                                 });
 
                                 return (
-                                    <div key={booking.bookingId} className={`bg-white p-4 rounded-lg shadow-md border-l-4 ${isPast ? 'border-gray-300 opacity-70' : 'border-[#0c4b83]'}`}>
+                                    <div 
+                                        key={booking.bookingId} 
+                                        className={`bg-white p-4 rounded-lg shadow-md border-l-4 transition-all duration-500 ${isPast ? 'border-gray-300 opacity-70' : 'border-[#0c4b83]'} ${booking.bookingId === bookingBeingCancelled ? 'animate-fade-out-shrink' : ''}`}
+                                    >
                                         <div className="flex justify-between items-start flex-wrap gap-2">
                                             <div>
                                                 <p className="font-bold text-lg text-[#0c4b83]">{formattedDate}</p>

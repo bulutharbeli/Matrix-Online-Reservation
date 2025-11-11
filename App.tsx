@@ -46,6 +46,7 @@ const AppContent: React.FC = () => {
     const [isConfirming, setIsConfirming] = useState(false);
     const [isMyBookingsOpen, setIsMyBookingsOpen] = useState(false);
     const [bookingToCancelId, setBookingToCancelId] = useState<string | null>(null);
+    const [bookingBeingCancelled, setBookingBeingCancelled] = useState<string | null>(null);
     const [isLoginOpen, setIsLoginOpen] = useState(false);
     const [isAiAssistantOpen, setIsAiAssistantOpen] = useState(false);
 
@@ -178,8 +179,14 @@ const AppContent: React.FC = () => {
 
     const handleConfirmCancelBooking = useCallback(() => {
         if (bookingToCancelId) {
-            setBookedSlots(prev => prev.filter(b => b.bookingId !== bookingToCancelId));
+            const idToCancel = bookingToCancelId;
+            setBookingBeingCancelled(idToCancel);
             setBookingToCancelId(null);
+
+            setTimeout(() => {
+                setBookedSlots(prev => prev.filter(b => b.bookingId !== idToCancel));
+                setBookingBeingCancelled(null);
+            }, 500); // Duration should match animation
         }
     }, [bookingToCancelId]);
     
@@ -300,6 +307,7 @@ const AppContent: React.FC = () => {
                     hotels={HOTELS}
                     courses={COURSES}
                     onCancelBooking={handleInitiateCancelBooking}
+                    bookingBeingCancelled={bookingBeingCancelled}
                 />
                 
                 <CancellationConfirmationDialog

@@ -32,6 +32,15 @@ const BookingForm: React.FC<BookingFormProps> = ({ details, onDetailsChange, onB
 
     return (
         <div className="bg-white p-5 rounded-lg shadow-sm">
+            <style>{`
+                @keyframes fade-in-up {
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                .animate-fade-in-up {
+                    animation: fade-in-up 0.3s ease-out forwards;
+                }
+            `}</style>
             <h3 className="text-lg font-semibold text-[#0c4b83] mb-4">Your Details</h3>
             <div className="space-y-3">
                 <InputField id="name" placeholder="Full Name" value={details.name} onChange={handleChange} />
@@ -55,7 +64,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ details, onDetailsChange, onB
                 {isBooking ? 'Processing...' : (user ? 'Book Lesson' : 'Login to Book')}
             </button>
             {bookingStatus && (
-                <div className={`mt-4 p-3 rounded-md text-sm text-center ${
+                <div className={`mt-4 p-3 rounded-md text-sm text-center animate-fade-in-up ${
                     bookingStatus.type === 'success' ? 'bg-blue-100 text-blue-900' : 'bg-red-100 text-red-900'
                 }`}>
                     {bookingStatus.message}

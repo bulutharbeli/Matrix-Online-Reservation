@@ -247,9 +247,18 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose, professional
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 transition-opacity duration-300" onClick={onClose}>
+            <style>{`
+                @keyframes fade-in-scale {
+                    from { opacity: 0; transform: scale(0.95); }
+                    to { opacity: 1; transform: scale(1); }
+                }
+                .animate-fade-in-scale {
+                    animation: fade-in-scale 0.2s ease-out forwards;
+                }
+            `}</style>
             <div
-                className="bg-white rounded-2xl shadow-2xl w-full max-w-lg h-[80vh] max-h-[700px] flex flex-col transform transition-all"
+                className="bg-white rounded-2xl shadow-2xl w-full max-w-lg h-[80vh] max-h-[700px] flex flex-col transform opacity-0 scale-95 animate-fade-in-scale"
                 onClick={e => e.stopPropagation()}
             >
                 <div className="p-4 border-b border-gray-200 flex justify-between items-center flex-shrink-0">
