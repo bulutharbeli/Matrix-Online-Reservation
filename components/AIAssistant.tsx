@@ -24,6 +24,42 @@ const ErrorIcon: React.FC = () => (
     </svg>
 );
 
+// Helper to format model's text response into HTML
+const formatTextToHtml = (text: string): string => {
+    if (!text) return '';
+    const lines = text.split('\n');
+    let html = '';
+    let inList = false;
+
+    lines.forEach((line) => {
+        const trimmedLine = line.trim();
+        if (trimmedLine.startsWith('* ') || trimmedLine.startsWith('- ')) {
+            const content = trimmedLine.substring(2);
+            if (!inList) {
+                html += '<ul class="list-disc list-inside space-y-1 my-2">';
+                inList = true;
+            }
+            html += `<li>${content}</li>`;
+        } else {
+            if (inList) {
+                html += '</ul>';
+                inList = false;
+            }
+            if (trimmedLine) {
+                 html += `<p>${line}</p>`;
+            } else {
+                html += '<br/>'
+            }
+        }
+    });
+
+    if (inList) {
+        html += '</ul>';
+    }
+
+    return html.replace(/<br\/><p>/g, '<p>').replace(/<\/ul><br\/>/g, '</ul>');
+};
+
 
 const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose, professionals, bookedSlots, onProChange, onDateChange, onTimeChange, onSessionChange }) => {
     const [messages, setMessages] = useState<Message[]>([]);
@@ -98,6 +134,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose, professional
 - Use the available tools to answer questions about professionals, their schedules, and availability.
 - When checking for availability, if a user's requested time is not available, you MUST inform them and suggest up to 3 nearby alternative time slots for the same day.
 - When a user wants to book, use the updateBookingSelection tool to pre-fill the form for them and instruct them to review and confirm the booking themselves.
+- When presenting lists, such as a list of professionals or available time slots, you MUST use Markdown bullet points (e.g., '* Item 1').
 - Be concise and conversational.`,
                         tools: [{ functionDeclarations: [getProfessionalInfo, getAvailableSlots, updateBookingSelection] }],
                     }
@@ -236,8 +273,12 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose, professional
                             {messages.map((msg, index) => (
                                 <div key={index} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
                                     {msg.role === 'model' && <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 text-[#0c4b83]">AI</div>}
-                                    <div className={`max-w-xs md:max-w-md p-3 rounded-2xl ${msg.role === 'user' ? 'bg-[#0c4b83] text-white rounded-br-none' : 'bg-gray-100 text-gray-800 rounded-bl-none'}`}>
-                                        <p className="text-sm" dangerouslySetInnerHTML={{__html: msg.text.replace(/\n/g, '<br />')}}></p>
+                                    <div className={`max-w-xs md:max-w-md p-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-[#0c4b83] text-white rounded-br-none' : 'bg-gray-100 text-gray-800 rounded-bl-none'}`}>
+                                        {msg.role === 'user' ? (
+                                             <p>{msg.text}</p>
+                                        ) : (
+                                            <div dangerouslySetInnerHTML={{ __html: formatTextToHtml(msg.text) }} />
+                                        )}
                                     </div>
                                 </div>
                             ))}
