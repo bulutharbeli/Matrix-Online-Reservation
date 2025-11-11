@@ -12,6 +12,13 @@ interface MyBookingsProps {
     bookingBeingCancelled: string | null;
 }
 
+const DownloadIcon: React.FC = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+    </svg>
+);
+
+
 const MyBookings: React.FC<MyBookingsProps> = ({
     isOpen,
     onClose,
@@ -25,6 +32,86 @@ const MyBookings: React.FC<MyBookingsProps> = ({
     if (!isOpen) return null;
 
     const sortedBookings = [...bookings].sort((a, b) => new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime());
+
+    const handleExportToPdf = (booking: BookedSlot) => {
+        const pro = professionals.find(p => p.id === booking.proId);
+        const hotel = hotels.find(h => h.id === booking.hotelId);
+        const course = courses.find(c => c.id === booking.courseId);
+
+        if (!pro || !hotel || !course) {
+            console.error("Booking details could not be found for PDF export.");
+            return;
+        }
+
+        const { jsPDF } = (window as any).jspdf;
+        const doc = new jsPDF();
+
+        const bookingDateTime = new Date(`${booking.date}T${booking.time}`);
+        const formattedDate = bookingDateTime.toLocaleDateString('en-US', {
+            weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
+        });
+        const formattedTime = bookingDateTime.toLocaleTimeString('en-US', {
+            hour: '2-digit', minute: '2-digit', hour12: true
+        });
+        
+        // Header
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(20);
+        doc.text('Booking Confirmation', 105, 20, { align: 'center' });
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100);
+        doc.text('Matrix Golf Holidays', 105, 28, { align: 'center' });
+
+        doc.setLineWidth(0.5);
+        doc.line(20, 35, 190, 35); // Horizontal line
+
+        let yPosition = 45;
+
+        const addDetail = (label: string, value: string) => {
+            doc.setFont('helvetica', 'bold');
+            doc.text(label, 20, yPosition);
+            doc.setFont('helvetica', 'normal');
+            doc.text(value, 70, yPosition);
+            yPosition += 8;
+        };
+        
+        // Lesson Details
+        addDetail('Date:', formattedDate);
+        addDetail('Time:', formattedTime);
+        addDetail('Session:', booking.sessionName);
+        addDetail('Professional:', pro.name);
+        addDetail('Price:', `€${booking.price}`);
+
+        yPosition += 5;
+        doc.setLineWidth(0.2);
+        doc.line(20, yPosition, 190, yPosition);
+        yPosition += 10;
+
+        // Location
+        addDetail('Hotel:', hotel.name);
+        addDetail('Golf Course:', course.name);
+        
+        yPosition += 5;
+        doc.line(20, yPosition, 190, yPosition);
+        yPosition += 10;
+        
+        // Client Details
+        addDetail('Client Name:', booking.name);
+        addDetail('Email:', booking.email);
+
+        // Footer
+        yPosition = 270;
+        doc.line(20, yPosition, 190, yPosition);
+        yPosition += 8;
+        doc.setFontSize(10);
+        doc.setTextColor(150);
+        doc.text('Thank you for booking with Matrix Golf Holidays.', 105, yPosition, { align: 'center' });
+        yPosition += 5;
+        doc.text('Please arrive 15 minutes before your lesson. Cancellations are permitted up to 24 hours in advance.', 105, yPosition, { align: 'center', maxWidth: 180 });
+
+        doc.save(`BookingConfirmation_${booking.name.replace(/\s/g, '_')}_${booking.date}.pdf`);
+    };
 
     return (
         <div 
@@ -123,26 +210,37 @@ const MyBookings: React.FC<MyBookingsProps> = ({
                                             <p><span className="font-semibold">Name:</span> {booking.name}</p>
                                             <p><span className="font-semibold">Email:</span> {booking.email}</p>
                                         </div>
-                                        {!isPast && (
-                                            <div className="mt-4 text-right">
-                                                {canCancel ? (
-                                                    <button
-                                                        onClick={() => onCancelBooking(booking.bookingId)}
-                                                        title="Cancel this booking"
-                                                        className="px-4 py-2 text-sm font-semibold rounded-md transition-colors bg-red-100 text-red-700 hover:bg-red-200"
-                                                    >
-                                                        Cancel Booking
-                                                    </button>
-                                                ) : (
-                                                    <div className="flex items-center justify-end gap-2 p-2 bg-yellow-50 text-yellow-800 border border-yellow-200 rounded-md text-xs">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                                                        </svg>
-                                                        <span>Cannot cancel within 24 hours of the lesson.</span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
+                                        
+                                        <div className="mt-4 flex flex-wrap justify-end items-center gap-3">
+                                            <button
+                                                onClick={() => handleExportToPdf(booking)}
+                                                title="Export to PDF"
+                                                className="px-4 py-2 text-sm font-semibold rounded-md transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200 flex items-center"
+                                            >
+                                                <DownloadIcon />
+                                                <span>Export to PDF</span>
+                                            </button>
+                                            {!isPast && (
+                                                <>
+                                                    {canCancel ? (
+                                                        <button
+                                                            onClick={() => onCancelBooking(booking.bookingId)}
+                                                            title="Cancel this booking"
+                                                            className="px-4 py-2 text-sm font-semibold rounded-md transition-colors bg-red-100 text-red-700 hover:bg-red-200"
+                                                        >
+                                                            Cancel Booking
+                                                        </button>
+                                                    ) : (
+                                                        <div className="flex items-center justify-end gap-2 p-2 bg-yellow-50 text-yellow-800 border border-yellow-200 rounded-md text-xs">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                                              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                                                            </svg>
+                                                            <span>Cannot cancel within 24 hours of the lesson.</span>
+                                                        </div>
+                                                    )}
+                                                </>
+                                            )}
+                                        </div>
                                     </div>
                                 );
                             })}
