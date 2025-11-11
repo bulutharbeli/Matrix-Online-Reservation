@@ -45,9 +45,8 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose, professional
                 // In a build-less environment, the key must be injected into the window object.
                 const apiKey = (window as any).GEMINI_API_KEY;
 
-                if (!apiKey || apiKey.startsWith("{{")) {
-                    // Give specific instructions for Netlify deployment
-                    throw new Error("API Key not found. Please configure Snippet Injection in Netlify.");
+                if (!apiKey || apiKey === 'YOUR_API_KEY_HERE' || apiKey.startsWith("{{")) {
+                    throw new Error("API Key not found. Please create config-env.js");
                 }
 
                 const ai = new GoogleGenAI({ apiKey });
@@ -111,17 +110,15 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isOpen, onClose, professional
                  const errorMessage = `
                     <h3 class="font-bold text-red-800">AI Assistant Configuration Needed</h3>
                     <div class="mt-2 text-sm text-red-700">
-                        <p>The assistant failed to start because the API key is not available to the application. To fix this, you need to add it to your Netlify site settings:</p>
+                        <p>The assistant failed to start because the API key is not available. To fix this, you need to create a configuration file:</p>
                         <ol class="list-decimal list-inside mt-3 space-y-2">
-                            <li>Go to <strong>Site settings > Build & deploy > Post processing</strong>.</li>
-                            <li>Click <strong>Add snippet</strong> under <strong>Snippet injection</strong>.</li>
-                            <li>Choose <strong>Insert before &lt;/head&gt;</strong>.</li>
-                            <li>Paste the following code into the snippet box:<br>
-                                <code class="text-xs bg-red-100 p-1 rounded-md block mt-1">&lt;script&gt;window.GEMINI_API_KEY = "{{env "API_KEY"}}";&lt;/script&gt;</code>
+                            <li>In the root directory of your project, create a new file named <strong>config-env.js</strong>.</li>
+                            <li>Add the following line of code to this file, replacing <strong>'YOUR_API_KEY_HERE'</strong> with your actual Gemini API key:
+                                <code class="text-xs bg-red-100 p-1 rounded-md block mt-1">window.GEMINI_API_KEY = 'YOUR_API_KEY_HERE';</code>
                             </li>
-                            <li><strong>Save</strong> and then <strong>re-deploy</strong> your site from the "Deploys" tab.</li>
+                            <li>Save the file and reload the application.</li>
                         </ol>
-                        <p class="mt-3">This will securely inject your API key from Netlify's environment variables into the app.</p>
+                        <p class="mt-3">This file will provide the necessary API key for the AI assistant to function.</p>
                     </div>`;
                 setInitializationError(errorMessage);
                 setMessages([]);
